@@ -1,0 +1,33 @@
+name: deploy-container
+
+on:
+  push:
+    branches:
+      - master # watch pushes onto master
+    paths:
+      - 'ssas/container/**' # only run this workflow when we make changes to something inside 'container'
+
+defaults:
+  run:
+    working-directory: ssas/container # set our execution environment to inside of our container directory 
+                                      # all the commands we will write below will be relative and should be executed inside the container folder
+
+# jobs run in parallel
+# we will have a single job to build and then deploy the container app
+jobs:
+  build:
+    runs-on: ubuntu-latest # specifies the virtual machine that will be created by GitHub
+
+    steps: # commands we want to execute
+      - uses: actions/checkout@v2 # checkout/load the code from our repository
+      - run: npm install # run npm install
+      - run: npm run build # run the build script
+      
+      # deploy all of the built files off to Amazon S3 using AWS CLI which gives us programmatic access to Amazon Web Services to get access to the AWS services we're going to put in '- uses'
+      - uses: chrislennon/action-aws-cli@v1.1
+      - run: aws s3 sync dist s3://${{ secrets.AWS_S3_BUCKET_NAME }}/container/latest # sync dist folder created by the build command with the dist folder in the s3 bucket
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      # Next we need to setup AWS S3
