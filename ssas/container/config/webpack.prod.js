@@ -8,7 +8,8 @@ const domain = process.env.PRODUCTION_DOMAIN
 const prodConfig = { 
     mode: 'production', // makes sure JS files are optimised and minified
     output: {
-        filename: '[name].[contenthash].js' // whenever we build some files for production every file uses this template for naming
+        filename: '[name].[contenthash].js', // whenever we build some files for production every file uses this template for naming
+        publicPath: '/container/latest/'
     },
     plugins: [
         new ModuleFederationPlugin({
