@@ -9,6 +9,7 @@ import {
 import Signin from './components/Signin';
 import Signup from './components/Signup';
 
+// Auth App
 const generateClassName = createGenerateClassName({
   productionPrefix: 'au',
 });

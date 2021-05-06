@@ -1,1 +1,2 @@
+// Dashboard index
 import('./bootstrap');
