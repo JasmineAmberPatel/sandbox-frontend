@@ -1,0 +1,40 @@
+name: deploy-dashboard
+
+on:
+  push:
+    branches:
+      - main # watch pushes onto master
+    paths:
+      - 'ssas/dashboard/**' # only run this workflow when we make changes to something inside 'dashboard'
+
+defaults:
+  run:
+    working-directory: ssas/dashboard # set our execution environment to inside of our dashboard directory 
+                                      # all the commands we will write below will be relative and should be executed inside the dashboard folder
+
+# jobs run in parallel
+# we will have a single job to build and then deploy the dashboard app
+jobs:
+  build:
+    runs-on: ubuntu-latest # specifies the virtual machine that will be created by GitHub
+
+    steps: # commands we want to execute
+      - uses: actions/checkout@v2 # checkout/load the code from our repository
+      - run: npm install # run npm install
+      - run: npm run build # run the build script
+      
+      # deploy all of the built files off to Amazon S3 using AWS CLI which gives us programmatic access to Amazon Web Services to get access to the AWS services we're going to put in '- uses'
+      - uses: chrislennon/action-aws-cli@v1.1
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+
+      - run: aws s3 sync dist s3://${{ secrets.AWS_S3_BUCKET_NAME }}/dashboard/latest # sync dist folder created by the build command with the dist folder in the s3 bucket
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - run: aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_DISTRIBUTION_ID }} --paths "/dashboard/latest/remoteEntry.js"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      
